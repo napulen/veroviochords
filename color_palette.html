@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>jQuery.each demo</title>
+  <style>
+  div {
+	    height:100px;
+	    background:blue;
+      text-align: center;
+      vertical-align: middle;
+      line-height: 100px;
+      color:#FFFFFF;
+  }
+  </style>
+  <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+</head>
+<body>
+
+<script>
+
+function nameToPitchClass(name){
+  var pitchClass = {
+    "B#":0,"C":0,"Dbb":0,
+    "B##":1,"C#":1,"Db":1,
+    "C##":2,"D":2,"Ebb":2,
+    "D#":3,"Eb":3,"Fbb":3,
+    "D##":4,"E":4,"Fb":4,
+    "E#":5,"F":5,"Gbb":5,
+    "E##":6,"F#":6,"Gb":6,
+    "F##":7,"G":7,"Abb":7,
+    "G#":8,"Ab":8,
+    "G##":9,"A":9,"Bbb":9,
+    "A#":10,"Bb":10,
+    "A##":11,"B":11,"Cb":11
+  };
+  if(pitchClass.hasOwnProperty(name)){
+    return pitchClass[name];
+  }
+  else {
+    return 12;
+  }
+}
+
+function pitchClassToName(pc){
+  var names = {
+    0:"C",
+    1:"C#/Db",
+    2:"D",
+    3:"D#/Eb",
+    4:"E",
+    5:"F",
+    6:"F#/Gb",
+    7:"G",
+    8:"G#/Ab",
+    9:"A",
+    10:"A#/Bb",
+    11:"B",
+    12:"X" // Unknown PitchClass
+  }
+  return names[pc];
+}
+
+var pitchColors = {
+  5:"#8000FF",
+	0:"#0000FF",
+	7:"#0080FF",
+  2:"#00FFFF",
+  9:"#00FF80",
+  4:"#00FF00",
+  11:"#80FF00",
+  6:"#FFFF00",
+  1:"#FF8000",
+  8:"#FF0000",
+  3:"#FF0080",
+  10:"#FF00FF",
+  12:"#000000"
+};
+
+var chordTypeColors = {
+  "maj":"#000080",
+  "min":"#000040",
+  "dim":"#800080",
+  "dom7":"#008000",
+  "hdim":"#004040",
+  "fdim":"#400040"
+};
+
+ $(document).ready(function(){
+	jQuery.each(pitchColors, function( key_key, key_value ) {
+    jQuery.each( chordTypeColors, function( degree_key, degree_value ) {
+      var pitchClassName = pitchClassToName(key_key);
+      console.log(pitchClassName, degree_key);
+      var id = ""+key_key+"_"+degree_key;
+      var text = ""+pitchClassName+" "+degree_key;
+      var $div = $("<div />").appendTo("body");
+      $div.attr('id', id)
+      $div.text(text);
+      // Draw the linear-gradient :D
+      //$("#"+ id).css("background", key_value);
+      $("#"+ id).css("background", "linear-gradient(to right, "+key_value+", "+degree_value+")");
+    });
+	});
+});
+</script>
+
+</body>
+</html>
