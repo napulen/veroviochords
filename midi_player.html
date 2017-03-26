@@ -152,10 +152,13 @@
                     // bug! time needs to be divided by 2
                     $("#midi-player").midiPlayer.seek(time / 2);
                 });
+
+                $(".system").attr("fill", "#FFFFFF").attr("stroke", "#FFFFFF");
+                $("path").attr("stroke", "#FFFFFF");
             };
 
             function loadFile() {
-                file = "mei/ex1a_analysis.mei";
+                file = "mei/ex1a.mei";
                 $.ajax({
                     url: file,
                     dataType: "text",
@@ -197,7 +200,7 @@
                         // Turn off the color of notes that are not playing anymore
                         ids.forEach(function(noteid) {
                             if ($.inArray(noteid, elementsattime.notes) == -1) {
-                                $("#" + noteid).attr("fill", "#000").attr("stroke", "#000");
+                                $("#" + noteid).attr("fill", "#FFFFFF").attr("stroke", "#FFFFFF");
                             }
                         });
                         // Update the current notes playing
@@ -215,15 +218,16 @@
                                 // Strip the root and type of chord
                                 var chordLabel = verse.getElementsByTagName("tspan")
                                 var root = chordLabel[0].innerHTML; // C
+                                var root_pc = nameToPitchClass(root);
                                 // chordLabel[1] contains an underscore, ignore it...
                                 var type = chordLabel[2].innerHTML; // major
-
-                                console.log(nameToPitchClass(root), type);
+                                $("#svg_output").css("background", "linear-gradient(to right, "+pitchColors[root_pc]+", "+chordTypeColors[type]+")");
+                                console.log(root_pc, type);
                               }
                             }
                             /****************************************/
                             if ($.inArray(noteid, elementsattime.notes) != -1) {
-                                $("#" + noteid).attr("fill", "#00F").attr("stroke", "#00F");;
+                                $("#" + noteid).attr("fill", "#FFFF00").attr("stroke", "#FFFF00");;
                             }
                         });
                     }
@@ -232,7 +236,7 @@
 
             var midiStop = function() {
                 ids.forEach(function(noteid) {
-                    $("#" + noteid).attr("fill", "#000").attr("stroke", "#000");
+                    $("#" + noteid).attr("fill", "#FFFFFF").attr("stroke", "#FFFFFF");
                 });
                 $("#player").hide();
                 isPlaying = false;
