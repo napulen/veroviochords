@@ -1,0 +1,267 @@
+<html>
+    <head>
+        <title>Verovio example with a MIDI Player</title>
+        <script src="http://www.verovio.org/javascript/develop/verovio-toolkit.js" type="text/javascript" ></script>
+        <!-- We also use jQuery -->
+        <script src="https://code.jquery.com/jquery-3.1.1.min.js" type="text/javascript" ></script>
+        <!-- Basic events from example 02 -->
+        <script src="javascript/basic-events.js" type="text/javascript" ></script>
+        <!-- A stylesheet for the help overlay -->
+        <link rel="stylesheet" href="css/tutorial.css" />
+
+        <!--/////////////-->
+        <!-- MIDI Player -->
+        <!--/////////////-->
+        <script type="text/javascript" language="javascript" src="javascript/midi-player/wildwebmidi.js"></script>
+        <script type="text/javascript" language="javascript" src="javascript/midi-player/midiplayer.js"></script>
+        <link rel="stylesheet" href="css/midiplayer.css" />
+
+    </head>
+    <body style="margin: 0px;">
+
+        <!-- A help overlay -->
+        <div id="help_overlay">
+            <p>Press <b>p</b> to start playing</p>
+            <p>Click on any note or in the player progress bar to jump in the piece</p>
+        </div>
+
+        <!--//////////////////////////////////////////////////////-->
+        <!-- The div where we are going to insert the MIDI Player -->
+        <!--//////////////////////////////////////////////////////-->
+        <div style="height: 30px;">
+            <div id="player" style="z-index: 20; position: absolute; display: none;"></div>
+        </div>
+
+        <!-- The div where we are going to insert the SVG -->
+        <div id="svg_output"/>
+
+        <script type="text/javascript">
+            var vrvToolkit = new verovio.toolkit();
+            var page = 1;
+            var zoom = 100;
+            var pageHeight = 2970;
+            var pageWidth = 2100;
+            var currChord = false;
+            var pitchColors = {
+              5:"#8000FF",
+            	0:"#0000FF",
+            	7:"#0080FF",
+              2:"#00FFFF",
+              9:"#00FF80",
+              4:"#00FF00",
+              11:"#80FF00",
+              6:"#FFFF00",
+              1:"#FF8000",
+              8:"#FF0000",
+              3:"#FF0080",
+              10:"#FF00FF",
+              12:"#000000"
+            };
+
+            var chordTypeColors = {
+              "maj":"#000080",
+              "min":"#000040",
+              "dim":"#800080",
+              "dom7":"#008000",
+              "hdim":"#004040",
+              "fdim":"#400040"
+            };
+
+            ////////////////////////////////////////////////
+            /* A variable for storing the highlighted ids */
+            ////////////////////////////////////////////////
+            var ids = [];
+            var isPlaying = false;
+
+            function nameToPitchClass(name){
+              var pitchClass = {
+                "B#":0,"C":0,"Dbb":0,
+                "B##":1,"C#":1,"Db":1,
+                "C##":2,"D":2,"Ebb":2,
+                "D#":3,"Eb":3,"Fbb":3,
+                "D##":4,"E":4,"Fb":4,
+                "E#":5,"F":5,"Gbb":5,
+                "E##":6,"F#":6,"Gb":6,
+                "F##":7,"G":7,"Abb":7,
+                "G#":8,"Ab":8,
+                "G##":9,"A":9,"Bbb":9,
+                "A#":10,"Bb":10,
+                "A##":11,"B":11,"Cb":11
+              };
+              if(pitchClass.hasOwnProperty(name)){
+                return pitchClass[name];
+              }
+              else {
+                return 12;
+              }
+            }
+
+            function pitchClassToName(pc){
+              var names = {
+                0:"C",
+                1:"C#/Db",
+                2:"D",
+                3:"D#/Eb",
+                4:"E",
+                5:"F",
+                6:"F#/Gb",
+                7:"G",
+                8:"G#/Ab",
+                9:"A",
+                10:"A#/Bb",
+                11:"B",
+                12:"X" // Unknown PitchClass
+              }
+              return names[pc];
+            }
+
+            function setOptions() {
+                pageHeight = $(document).height() * 100 / zoom ;
+                pageWidth = $(document).width() * 100 / zoom ;
+                border = 50;
+                options = {
+                            inputFormat: 'mei',
+                            pageHeight: pageHeight,
+                            pageWidth: pageWidth,
+                            border: border,
+                            scale: zoom,
+                            adjustPageHeight: 1,
+                            ignoreLayout: 1
+                        };
+                vrvToolkit.setOptions(options);
+            }
+
+            function loadData(data) {
+                setOptions();
+                vrvToolkit.loadData(data);
+
+                page = 1;
+                loadPage();
+            }
+
+            function loadPage() {
+                svg = vrvToolkit.renderPage(page, {});
+                $("#svg_output").html(svg);
+
+                ////////////////////////////////////////
+                /* Bind a on click event to each note */
+                ////////////////////////////////////////
+                $(".note").click(function() {
+                    var id = $(this).attr("id");
+                    var time = vrvToolkit.getTimeForElement(id);
+                    // bug! time needs to be divided by 2
+                    $("#midi-player").midiPlayer.seek(time / 2);
+                });
+            };
+
+            function loadFile() {
+                file = "mei/ex1a_analysis.mei";
+                $.ajax({
+                    url: file,
+                    dataType: "text",
+                    success: function(data) {
+                        loadData(data);
+                    }
+                });
+            }
+
+            ////////////////////////////////////////////
+            /* A function that start playing the file */
+            ////////////////////////////////////////////
+            function play_midi() {
+                if (isPlaying == false) {
+                    var base64midi = vrvToolkit.renderToMidi();
+                    var song = 'data:audio/midi;base64,' + base64midi;
+                    $("#player").show();
+                    $("#player").midiPlayer.play(song);
+                    isPlaying = true;
+                }
+            }
+
+            //////////////////////////////////////////////////////
+            /* Two callback functions passed to the MIDI player */
+            //////////////////////////////////////////////////////
+            var midiUpdate = function(time) {
+                // bug! time needs to be * 2 (- 800 for adjustment)
+                var vrvTime = Math.max(0, 2 * time - 800);
+                var elementsattime = vrvToolkit.getElementsAtTime(vrvTime);
+                // There is a page[-1] element, ignore it
+                if (elementsattime.page > 0) {
+                    // If the current notes belong to a newer page, load it
+                    if (elementsattime.page != page) {
+                        page = elementsattime.page;
+                        loadPage();
+                    }
+                    // Check the array contains at least one note
+                    if ((elementsattime.notes.length > 0) && (ids != elementsattime.notes)) {
+                        // Turn off the color of notes that are not playing anymore
+                        ids.forEach(function(noteid) {
+                            if ($.inArray(noteid, elementsattime.notes) == -1) {
+                                $("#" + noteid).attr("fill", "#000").attr("stroke", "#000");
+                            }
+                        });
+                        // Update the current notes playing
+                        ids = elementsattime.notes;
+                        ids.forEach(function(noteid) {
+                            /**** Finding the chords of the current notes *****/
+                            var lyrics = $("#"+noteid+" .verse");
+                            // If there is any chord lyric
+                            if (lyrics.length > 0){
+                              var verse = document.getElementById(lyrics[0].id);
+                              // Check if it is different from the current one
+                              if (verse != currChord){
+                                // Turn it into the new current chord
+                                currChord = verse;
+                                // Strip the root and type of chord
+                                var chordLabel = verse.getElementsByTagName("tspan")
+                                var root = chordLabel[0].innerHTML; // C
+                                // chordLabel[1] contains an underscore, ignore it...
+                                var type = chordLabel[2].innerHTML; // major
+
+                                console.log(nameToPitchClass(root), type);
+                              }
+                            }
+                            /****************************************/
+                            if ($.inArray(noteid, elementsattime.notes) != -1) {
+                                $("#" + noteid).attr("fill", "#00F").attr("stroke", "#00F");;
+                            }
+                        });
+                    }
+                }
+            }
+
+            var midiStop = function() {
+                ids.forEach(function(noteid) {
+                    $("#" + noteid).attr("fill", "#000").attr("stroke", "#000");
+                });
+                $("#player").hide();
+                isPlaying = false;
+            }
+
+            $(document).ready(function() {
+
+                $(window).keyup(function(event){
+                    ////////////////////////////////
+                    /* Key events 'p' for playing */
+                    ////////////////////////////////
+                    if (event.keyCode == 80) {
+                        play_midi();
+                    }
+                });
+
+                $(window).resize(function(){
+                    applyZoom();
+                });
+
+                $("#player").midiPlayer({
+                    color: "#c00",
+                    onUnpdate: midiUpdate,
+                    onStop: midiStop,
+                    width: 250
+                });
+
+                loadFile();
+            });
+        </script>
+    </body>
+</html>
