@@ -64,7 +64,8 @@
               "dim":"#800080",
               "dom7":"#008000",
               "hdim":"#004040",
-              "fdim":"#400040"
+              "fdim":"#400040",
+              "unknown":"#FFFFFF"
             };
 
             ////////////////////////////////////////////////
@@ -187,6 +188,7 @@
                     var base64midi = vrvToolkit.renderToMidi();
                     var song = 'data:audio/midi;base64,' + base64midi;
                     $("#player").show();
+                    $("#help_overlay").hide();
                     $("#player").midiPlayer.play(song);
                     isPlaying = true;
                 }
@@ -232,8 +234,11 @@
                                 var root_pc = nameToPitchClass(root);
                                 // chordLabel[1] contains an underscore, ignore it...
                                 var type = chordLabel[2].innerHTML; // major
+                                if(!chordTypeColors.hasOwnProperty(type)){
+                                  type = "unknown";
+                                }
                                 $("#svg_output").css("background", "linear-gradient(to right, "+pitchColors[root_pc]+", "+chordTypeColors[type]+")");
-                                console.log(root_pc, type);
+                                //console.log(root_pc, type);
                               }
                             }
                             /****************************************/
@@ -250,6 +255,7 @@
                     $("#" + noteid).attr("fill", "#FFFFFF").attr("stroke", "#FFFFFF");
                 });
                 $("#player").hide();
+                $("#help_overlay").show();
                 isPlaying = false;
             }
 
