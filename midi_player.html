@@ -33,7 +33,7 @@
         </div>
 
         <!-- The div where we are going to insert the SVG -->
-        <div id="svg_output"/>
+        <div id="svg_output">
 
         <script type="text/javascript">
             var vrvToolkit = new verovio.toolkit();
@@ -260,7 +260,7 @@
             }
 
             $(document).ready(function() {
-
+                $("#svg_output").css("background", "black");
                 $(window).keyup(function(event){
                     ////////////////////////////////
                     /* Key events 'p' for playing */
